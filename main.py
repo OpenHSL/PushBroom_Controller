@@ -1,7 +1,8 @@
 from Model.Camera import Basler
-from Model.HSI import HSImage
 from Model.Servomotor import Servomotor
 from tqdm import trange
+from queue import Queue
+from threading import Thread
 import numpy as np
 import os
 from PIL import Image
@@ -9,10 +10,24 @@ from PIL import Image
 from settings import CameraSettings
 
 
+shots_buffer = Queue()
+sets = CameraSettings()
+
+
+def save_layer(path_to_save: str):
+    global shots_buffer
+    counter = 0
+    while shots_buffer.qsize() > 0:
+        layer = shots_buffer.get()
+        img = Image.fromarray(layer)
+        if not os.path.exists(path_to_save):
+            os.mkdir(path_to_save)
+        img.save(f"{path_to_save}/frame_{counter}.png")
+        counter += 1
+
+
 def do_step(camera: Basler,
-            servomotor: Servomotor,
-            path_to_save: str,
-            **kwargs):
+            servomotor: Servomotor):
     """
     Does one step of system concluded shot, adding to hypercube this shot and step of servomotor
 
@@ -20,55 +35,34 @@ def do_step(camera: Basler,
     ----------
     camera: Basler
         instance of Basler camera
-    hsi: HSImage
-        hyperspectral image
     servomotor : Servomotor
         instance of servomotor
-    **kwargs concludes
-        ind: int
-            number of channel of HSI
-        num: int
-            count of layers (in X-coordinate) in HSI
     """
-    ind = kwargs['ind']
     layer = camera.make_shot()
-    save_layer(layer=layer, path_to_save=path_to_save, num_step=ind)
+    shots_buffer.put(layer)
     servomotor.next_step()
 
 
-def save_layer(layer: np.ndarray,
-               path_to_save: str,
-               num_step: int):
-    img = Image.fromarray(layer)
-    if not os.path.exists(path_to_save):
-        os.mkdir(path_to_save)
-    img.save(f"{path_to_save}/frame_{num_step}.png")
+def init_hardware():
+    try:
+        camera = Basler()
+        print('Camera initializing successfully')
+    except:
+        raise
+
+    try:
+        servomotor = Servomotor()
+        print('Servomotor connects successfully')
+    except:
+        raise
+
+    return camera, servomotor
 
 
-def save_hsi(hsi: HSImage,
-             path_to_save: str):
-    """
-    Saves hypespectral image in different formats
-
-    Parameters
-    ----------
-    hsi: HSImage
-        hyperspectral image
-    path_to_save: str
-        path to saving HSI in format ends with .tiff, .mat, .npy
-    """
-
-    if path_to_save.endswith('.mat'):
-        hsi.save_to_mat(path_to_file=path_to_save, key='image')
-    elif path_to_save.endswith('.tiff'):
-        hsi.save_to_tiff(path_to_file=path_to_save)
-    elif path_to_save.endswith('.npy'):
-        hsi.save_to_npy(path_to_file=path_to_save)
-    else:
-        print("Saving error: please check file format.\nHSI was not saved")
-
-
-def start_record():
+def start_record(camera,
+                 servomotor,
+                 number_of_steps,
+                 path_to_save: str):
     """
     Starts recording of hyperspectral image
 
@@ -94,37 +88,28 @@ def start_record():
 
     print('Start recording...')
 
-    number_of_steps = CameraSettings.number_of_steps
-    exposure = CameraSettings.exposure
-    gain_value = CameraSettings.gain
-    mode = CameraSettings.mode
-    direction = CameraSettings.direction
-    path_to_save = CameraSettings.path_to_save
-
-    try:
-        camera = Basler()
-        camera.set_camera_configures(exposure=exposure, gain_value=gain_value)
-        print('Camera initializing successfully')
-    except Exception:
-        raise "Error camera initializing"
-
-    try:
-        servomotor = Servomotor(direction, mode=mode)
-        servomotor.initialize_pins()
-        print('Servomotor connects successfully')
-    except Exception:
-        raise "Error with servomotor connections"
+    save_thread = Thread(target=save_layer,
+                         args=(path_to_save,))
 
     for i in trange(number_of_steps):
-        do_step(camera, servomotor, ind=i, path_to_save=path_to_save)
+        do_step(camera,
+                servomotor)
 
-    path_to_log = path_to_save.split('.')[0] + '_log.txt'
-    log = f'{number_of_steps}\n' \
-          f'{exposure}\n' \
-          f'{gain_value}\n' \
-          f'{mode}\n' \
-          f'{direction}\n' \
-          f'{path_to_save}\n' \
+        if i == 0:
+            save_thread.start()
+
+    save_thread.join()
+
+
+def save_logs():
+
+    path_to_log = sets.path_to_save.split('.')[0] + '_log.txt'
+    log = f'{sets.number_of_steps}\n' \
+          f'{sets.exposure}\n' \
+          f'{sets.gain}\n' \
+          f'{sets.mode}\n' \
+          f'{sets.direction}\n' \
+          f'{sets.path_to_save}\n'
 
     try:
         with open(path_to_log) as f:
@@ -134,5 +119,17 @@ def start_record():
 
 
 if __name__ == '__main__':
-    start_record()
+    camera, servomotor = init_hardware()
 
+    camera.set_camera_configures(exposure=sets.exposure,
+                                 gain_value=sets.gain)
+
+    servomotor.initialize_pins(direction=sets.direction,
+                               mode=sets.mode)
+
+    start_record(camera=camera,
+                 servomotor=servomotor,
+                 number_of_steps=sets.number_of_steps,
+                 path_to_save=sets.path_to_save)
+
+    save_logs()

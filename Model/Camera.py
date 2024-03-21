@@ -1,6 +1,7 @@
 from pypylon import pylon
 import numpy as np
 
+
 class Basler:
     """
     Class to work with Basler camera
