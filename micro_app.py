@@ -9,6 +9,8 @@ from gui.common_gui import CIU
 from gui.mac_micro_gui import Ui_MainWindow
 from settings import CameraSettings
 import main as controller
+from main import shots_buffer
+
 
 sets = CameraSettings()
 camera, servomotor = controller.init_hardware()
@@ -24,7 +26,6 @@ class Worker(QObject):
     global camera
     global servomotor
     meta_data = Signal(dict)
-
     @Slot(dict)
     def do_work(self, meta):
         try:
