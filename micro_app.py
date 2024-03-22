@@ -124,7 +124,7 @@ class MainWindow(CIU):
         self.worker.meta_data.connect(self.end_record)
         self.meta_requested.connect(self.worker.do_work)
 
-        self.worker.finished_signal.connect(self.thread.quit)
+        self.worker.finished_signal.connect(self.worker_thread.quit)
         self.worker.finished_signal.connect(self.worker.deleteLater)
         self.thread.finished_signal.connect(self.thread.deleteLater)
 
