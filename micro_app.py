@@ -14,7 +14,7 @@ shots_buffer = Queue()
 sets = CameraSettings()
 camera, servomotor = controller.init_hardware()
 
-camera.set_camera_configures(exposure=sets.exposure,
+camera.set_camera_confчigures(exposure=sets.exposure,
                              gain_value=sets.gain)
 
 servomotor.initialize_pins(direction=sets.direction,
