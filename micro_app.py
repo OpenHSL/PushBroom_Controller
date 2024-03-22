@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QThread, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtGui import QPixmap
 
+import utils
 from gui.common_gui import CIU
 from gui.mac_micro_gui import Ui_MainWindow
 from settings import CameraSettings
@@ -73,6 +74,8 @@ class MainWindow(CIU):
                                      gain_value=sets.gain)
 
         image = camera.make_shot()
+
+
         q_image = self.nparray_2_qimage(image)
         self.ui.image_label.setPixmap(QPixmap(q_image))
 
