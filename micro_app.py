@@ -44,6 +44,7 @@ class Worker(QObject):
     global servomotor
     global shots_buffer
     meta_data = Signal(dict)
+    finished_signal = Signal()
 
     @Slot(dict)
     def do_work(self, meta):
@@ -63,11 +64,14 @@ class Worker(QObject):
 
                 if i == 0:
                     save_thread.start()
+
             save_thread.join()
 
             self.meta_data.emit({"Status": "Done"})
         except Exception as e:
             self.meta_data.emit({"Status": "Error", "Error": str(e)})
+
+        self.finished_signal.emit()
 
 
 class MainWindow(CIU):
@@ -82,12 +86,6 @@ class MainWindow(CIU):
         # THREAD SETUP
         self.worker = Worker()
         self.worker_thread = QThread()
-
-        self.worker.meta_data.connect(self.end_record)
-        self.meta_requested.connect(self.worker.do_work)
-
-        self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.start()
 
         # BUTTONS CONNECTIONS
         self.ui.start_btn.clicked.connect(self.start_record)
@@ -114,16 +112,6 @@ class MainWindow(CIU):
             self.ui.start_btn.setEnabled(True)
             self.show_error(status["Error"])
 
-        # THREAD SETUP
-        self.worker = Worker()
-        self.worker_thread = QThread()
-
-        self.worker.meta_data.connect(self.end_record)
-        self.meta_requested.connect(self.worker.do_work)
-
-        self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.start()
-
     def start_record(self):
         self.ui.start_btn.setEnabled(False)
 
@@ -132,6 +120,16 @@ class MainWindow(CIU):
         sets.direction = int(self.ui.direction_edit.text())
         sets.mode = int(self.ui.mode_edit.text())
         sets.number_of_steps = int(self.ui.step_edit.text())
+
+        self.worker.meta_data.connect(self.end_record)
+        self.meta_requested.connect(self.worker.do_work)
+
+        self.worker.finished_signal.connect(self.thread.quit)
+        self.worker.finished_signal.connect(self.worker.deleteLater)
+        self.thread.finished_signal.connect(self.thread.deleteLater)
+
+        self.worker.moveToThread(self.worker_thread)
+        self.worker_thread.start()
 
         self.meta_requested.emit(sets)
 
