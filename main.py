@@ -92,13 +92,14 @@ def start_record(camera,
                          args=(path_to_save,))
 
     for i in trange(number_of_steps):
-        do_step(camera,
-                servomotor)
+        do_step(camera=camera,
+                servomotor=servomotor)
 
         if i == 0:
             save_thread.start()
 
     save_thread.join()
+    print(f'End saving shots to {path_to_save}')
 
 
 def save_logs():
@@ -112,7 +113,7 @@ def save_logs():
           f'{sets.path_to_save}\n'
 
     try:
-        with open(path_to_log) as f:
+        with open(path_to_log, 'w') as f:
             f.write(log)
     except Exception:
         raise "Error with creating log-file"
