@@ -32,10 +32,13 @@ class Worker(QObject):
         try:
             camera.set_camera_configures(exposure=meta.exposure,
                                          gain_value=meta.gain)
+            servomotor.initialize_pins(direction=meta.direction,
+                                       mode=meta.mode)
             controller.start_record(camera=camera,
                                     servomotor=servomotor,
                                     number_of_steps=meta.number_of_steps,
                                     path_to_save=meta.path_to_save)
+
             self.meta_data.emit({"Status": "Done"})
         except Exception as e:
             self.meta_data.emit({"Status": "Error", "Error": str(e)})
