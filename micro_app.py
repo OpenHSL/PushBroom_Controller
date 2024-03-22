@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QThread, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtGui import QPixmap
 
-import utils
 from gui.common_gui import CIU
 from gui.mac_micro_gui import Ui_MainWindow
 from settings import CameraSettings
@@ -16,7 +15,7 @@ sets = CameraSettings()
 camera, servomotor = controller.init_hardware()
 
 camera.set_camera_configures(exposure=sets.exposure,
-                             gain=sets.gain)
+                             gain_value=sets.gain)
 
 servomotor.initialize_pins(direction=sets.direction,
                            mode=sets.mode)
@@ -70,7 +69,7 @@ class MainWindow(CIU):
         sets.gain = int(self.ui.gain_edit.text())
 
         camera.set_camera_configures(exposure=sets.exposure,
-                                     gain=sets.gain)
+                                     gain_value=sets.gain)
 
         image = camera.make_shot()
         q_image = self.nparray_2_qimage(image)
