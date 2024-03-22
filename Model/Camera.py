@@ -28,6 +28,7 @@ class Basler:
         gain_value : int
             gain coefficient for shot
         """
+        self.camera.Open()
         self.camera.ExposureTime.SetValue(exposure)
         self.camera.GainAuto.SetValue('Off')
         self.camera.Gain.SetValue(gain_value)

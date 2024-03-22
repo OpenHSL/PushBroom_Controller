@@ -1,4 +1,5 @@
 import os
+import cv2
 import sys
 from queue import Queue
 from threading import Thread
@@ -8,13 +9,13 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QThread, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtGui import QPixmap
 
-
 import utils
 from gui.common_gui import CIU
 from gui.mac_micro_gui import Ui_MainWindow
 from settings import CameraSettings
 from main import init_hardware
-#from main import shots_buffer
+
+# from main import shots_buffer
 
 shots_buffer = Queue()
 sets = CameraSettings()
@@ -49,13 +50,13 @@ class Worker(QObject):
     @Slot(dict)
     def do_work(self, meta):
         try:
-            save_thread = Thread(target=save_layer,
-                                 args=(meta.path_to_save,))
 
             camera.set_camera_configures(exposure=meta.exposure,
                                          gain_value=meta.gain)
             servomotor.initialize_pins(direction=meta.direction,
                                        mode=meta.mode)
+            save_thread = Thread(target=save_layer,
+                                 args=(meta.path_to_save,))
 
             for i in range(meta.number_of_steps):
                 layer = camera.make_shot()
@@ -83,16 +84,15 @@ class MainWindow(CIU):
         self.ui.setupUi(self)
         self.show()
 
-        # THREAD SETUP
-        self.worker = Worker()
-        self.worker_thread = QThread()
-
         # BUTTONS CONNECTIONS
         self.ui.start_btn.clicked.connect(self.start_record)
         self.ui.preview_btn.clicked.connect(self.make_shot)
+        self.ui.image_label.setGeometry(600, 200, 600, 400)
 
     def make_shot(self):
         global camera
+
+        # camera, _ = init_hardware()
 
         sets.exposure = int(self.ui.exposure_edit.text())
         sets.gain = int(self.ui.gain_edit.text())
@@ -101,6 +101,9 @@ class MainWindow(CIU):
                                      gain_value=sets.gain)
 
         image = camera.make_shot()
+        size_img = (int(image.shape[1] * 0.5),
+                    int(image.shape[0] * 0.5))
+        image = cv2.resize(image, size_img)
 
         q_image = self.nparray_2_qimage(image)
         self.ui.image_label.setPixmap(QPixmap(q_image))
@@ -120,6 +123,10 @@ class MainWindow(CIU):
         sets.direction = int(self.ui.direction_edit.text())
         sets.mode = int(self.ui.mode_edit.text())
         sets.number_of_steps = int(self.ui.step_edit.text())
+
+        # THREAD SETUP
+        self.worker = Worker()
+        self.worker_thread = QThread()
 
         self.worker.meta_data.connect(self.end_record)
         self.meta_requested.connect(self.worker.do_work)
