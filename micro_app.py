@@ -126,7 +126,7 @@ class MainWindow(CIU):
 
         self.worker.finished_signal.connect(self.worker_thread.quit)
         self.worker.finished_signal.connect(self.worker.deleteLater)
-        self.thread.finished_signal.connect(self.thread.deleteLater)
+        self.worker_thread.finished_signal.connect(self.worker_thread.deleteLater)
 
         self.worker.moveToThread(self.worker_thread)
         self.worker_thread.start()
