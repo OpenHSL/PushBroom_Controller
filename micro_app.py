@@ -1,20 +1,24 @@
+import os
 import sys
 from queue import Queue
+from threading import Thread
+from PIL import Image
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QThread, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtGui import QPixmap
 
+
 import utils
 from gui.common_gui import CIU
 from gui.mac_micro_gui import Ui_MainWindow
 from settings import CameraSettings
-import main as controller
-from main import shots_buffer
+from main import init_hardware
+#from main import shots_buffer
 
-
+shots_buffer = Queue()
 sets = CameraSettings()
-camera, servomotor = controller.init_hardware()
+camera, servomotor = init_hardware()
 
 camera.set_camera_configures(exposure=sets.exposure,
                              gain_value=sets.gain)
@@ -23,21 +27,43 @@ servomotor.initialize_pins(direction=sets.direction,
                            mode=sets.mode)
 
 
+def save_layer(path_to_save: str):
+    global shots_buffer
+    counter = 0
+    while shots_buffer.qsize() > 0:
+        layer = shots_buffer.get()
+        img = Image.fromarray(layer)
+        if not os.path.exists(path_to_save):
+            os.mkdir(path_to_save)
+        img.save(f"{path_to_save}/frame_{counter}.png")
+        counter += 1
+
+
 class Worker(QObject):
     global camera
     global servomotor
+    global shots_buffer
     meta_data = Signal(dict)
+
     @Slot(dict)
     def do_work(self, meta):
         try:
+            save_thread = Thread(target=save_layer,
+                                 args=(meta.path_to_save,))
+
             camera.set_camera_configures(exposure=meta.exposure,
                                          gain_value=meta.gain)
             servomotor.initialize_pins(direction=meta.direction,
                                        mode=meta.mode)
-            controller.start_record(camera=camera,
-                                    servomotor=servomotor,
-                                    number_of_steps=meta.number_of_steps,
-                                    path_to_save=meta.path_to_save)
+
+            for i in range(meta.number_of_steps):
+                layer = camera.make_shot()
+                shots_buffer.put(layer)
+                servomotor.next_step()
+
+                if i == 0:
+                    save_thread.start()
+            save_thread.join()
 
             self.meta_data.emit({"Status": "Done"})
         except Exception as e:
@@ -78,7 +104,6 @@ class MainWindow(CIU):
 
         image = camera.make_shot()
 
-
         q_image = self.nparray_2_qimage(image)
         self.ui.image_label.setPixmap(QPixmap(q_image))
 
@@ -88,6 +113,16 @@ class MainWindow(CIU):
         else:
             self.ui.start_btn.setEnabled(True)
             self.show_error(status["Error"])
+
+        # THREAD SETUP
+        self.worker = Worker()
+        self.worker_thread = QThread()
+
+        self.worker.meta_data.connect(self.end_record)
+        self.meta_requested.connect(self.worker.do_work)
+
+        self.worker.moveToThread(self.worker_thread)
+        self.worker_thread.start()
 
     def start_record(self):
         self.ui.start_btn.setEnabled(False)
