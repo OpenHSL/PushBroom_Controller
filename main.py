@@ -105,12 +105,12 @@ def start_record(camera,
 def save_logs():
 
     path_to_log = sets.path_to_save.split('.')[0] + '_log.txt'
-    log = f'{sets.number_of_steps}\n' \
-          f'{sets.exposure}\n' \
-          f'{sets.gain}\n' \
-          f'{sets.mode}\n' \
-          f'{sets.direction}\n' \
-          f'{sets.path_to_save}\n'
+    log = f'number_of_steps: {sets.number_of_steps}\n' \
+          f'exposure: {sets.exposure}\n' \
+          f'gain: {sets.gain}\n' \
+          f'mode: {sets.mode}\n' \
+          f'direction: {sets.direction}\n' \
+          f'path_to_save: {sets.path_to_save}\n'
 
     try:
         with open(path_to_log, 'w') as f:
