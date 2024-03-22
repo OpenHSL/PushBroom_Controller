@@ -10,12 +10,11 @@ from gui.mac_micro_gui import Ui_MainWindow
 from settings import CameraSettings
 import main as controller
 
-shots_buffer = Queue()
 sets = CameraSettings()
 camera, servomotor = controller.init_hardware()
 
 camera.set_camera_configures(exposure=sets.exposure,
-                              gain_value=sets.gain)
+                             gain_value=sets.gain)
 
 servomotor.initialize_pins(direction=sets.direction,
                            mode=sets.mode)
@@ -29,7 +28,8 @@ class Worker(QObject):
     @Slot(dict)
     def do_work(self, meta):
         try:
-            print(meta)
+            camera.set_camera_configures(exposure=meta.exposure,
+                                         gain_value=meta.gain)
             controller.start_record(camera=camera,
                                     servomotor=servomotor,
                                     number_of_steps=meta.number_of_steps,
