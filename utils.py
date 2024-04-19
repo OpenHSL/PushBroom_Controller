@@ -1,11 +1,11 @@
-import os
 import cv2
 import h5py
 import json
-import torch
 import numpy as np
-from time import localtime
+import os
 import scipy.io as sio
+
+from time import localtime
 
 
 def get_file_name(filepath):
@@ -74,13 +74,3 @@ def request_keys_from_h5_file(pathfile):
     with h5py.File(pathfile, 'r') as f:
         f.visit(keys.append)
     return keys
-
-
-def get_gpu_info():
-    devices = []
-    if torch.cuda.is_available():
-        num_gpus = torch.cuda.device_count()
-        for i in range(num_gpus):
-            devices.append(torch.cuda.get_device_name(i))
-    devices.append("cpu")
-    return devices

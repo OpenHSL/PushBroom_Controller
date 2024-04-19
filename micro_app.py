@@ -1,21 +1,20 @@
-import os
 import cv2
+import os
 import sys
+
 from queue import Queue
-from threading import Thread
 from PIL import Image
+from threading import Thread
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QThread, QObject, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtGui import QPixmap
 
-import utils
 from gui.common_gui import CIU
 from gui.mac_micro_gui import Ui_MainWindow
-from settings import CameraSettings
 from main import init_hardware
+from settings import CameraSettings
 
-# from main import shots_buffer
 
 shots_buffer = Queue()
 sets = CameraSettings()
