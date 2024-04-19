@@ -1,11 +1,12 @@
-from Model.Camera import Basler
-from Model.Servomotor import Servomotor
-from tqdm import trange
-from queue import Queue
-from threading import Thread
-import numpy as np
 import os
+
 from PIL import Image
+from queue import Queue
+from tqdm import trange
+from threading import Thread
+
+from hardware_api.camera_api import BaslerCam
+from hardware_api.servomotor_api import Servomotor
 
 from settings import CameraSettings
 
@@ -26,7 +27,7 @@ def save_layer(path_to_save: str):
         counter += 1
 
 
-def do_step(camera: Basler,
+def do_step(camera: BaslerCam,
             servomotor: Servomotor):
     """
     Does one step of system concluded shot, adding to hypercube this shot and step of servomotor
@@ -45,7 +46,7 @@ def do_step(camera: Basler,
 
 def init_hardware():
     try:
-        camera = Basler()
+        camera = BaslerCam()
         print('Camera initializing successfully')
     except:
         raise
@@ -59,31 +60,21 @@ def init_hardware():
     return camera, servomotor
 
 
-def start_record(camera,
-                 servomotor,
-                 number_of_steps,
+def start_record(camera: BaslerCam,
+                 servomotor: Servomotor,
+                 number_of_steps: int,
                  path_to_save: str):
     """
     Starts recording of hyperspectral image
 
     Parameters
     ----------
+    camera:
+    servomotor:
     number_of_steps: int
         count of layers (images) of hyperspectral image which will shouted
-    exposure: int
-        time of exposure in milliseconds
-    mode: int
-        mode for servomotor
-    velocity: int
-        velocity of servomotor
-    direction: int
-        get 1 or 0 values
     path_to_save: str
         path to mat file in which hyperspepctral image will be saved
-    path_to_coef: str
-        path to file with raw spectrum obtained from slit
-    key_coef: str
-        key for mat file of matrix of normalized coefficients
     """
 
     print('Start recording...')
