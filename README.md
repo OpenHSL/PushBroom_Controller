@@ -37,7 +37,7 @@
 
 ## Примеры полученных и сформированных данных:
 
-Нижепредставленные наборы даных получены данным ПО, а в дальнейшем обработаны и сформированы с помощью [OpenHSL](https://github.com/OpenHSL/OpenHSL)
+Нижепредставленные наборы даных получены данным ПО, а в дальнейшем обработаны и сформированы с помощью платформы с открытым исходным кодом [OpenHSL](https://github.com/OpenHSL/OpenHSL)
 
 1) [Неокрашенный микропрепарат](https://www.kaggle.com/datasets/openhsl/hyperdataset-unstained-tissue-microslide)
 2) [Окрашенный микропрепарат](https://www.kaggle.com/datasets/openhsl/hyperdataset-stained-microscope)
